@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bus Fare — Nagorik Hub</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<nav class="nav"><div class="nav-inner"><a class="brand" href="index.html">🇧🇩 Nagorik <span>Hub</span></a><button class="menu">☰</button>
+<div class="navlinks"><a href="index.html">Home</a><a href="vegetables.html">Vegetables</a><a href="grocery.html">Grocery</a><a href="bus-fare.html" class="active">Bus Fare</a><a href="update-info.html">তথ্য আপডেট</a><a href="complaint.html">Complaint</a><a href="helplines.html">Help Lines</a></div></div></nav>
+<main class="container">
+  <div class="section-head"><div><h2>🚌 Bus Fare</h2><p>From ও To district নির্বাচন করে রুটভিত্তিক আনুমানিক বাস ভাড়া দেখুন।</p></div></div>
+  <div class="fare-box">
+    <form id="fareForm" class="route-form" autocomplete="off">
+      <div class="autocomplete-wrap"><input id="from" class="input location-input" placeholder="From — জেলা লিখুন" aria-label="From"></div>
+      <div class="route-arrow">→</div>
+      <div class="autocomplete-wrap"><input id="to" class="input location-input" placeholder="To — জেলা লিখুন" aria-label="To"></div>
+      <button class="btn">Check Fare</button>
+    </form>
+    <div class="route-hint">দ্রুত দেখুন:
+      <button type="button" class="quick-route" data-from="ঢাকা" data-to="চট্টগ্রাম">ঢাকা → চট্টগ্রাম</button>
+      <button type="button" class="quick-route" data-from="ঢাকা" data-to="সিলেট">ঢাকা → সিলেট</button>
+      <button type="button" class="quick-route" data-from="ঢাকা" data-to="রংপুর">ঢাকা → রংপুর</button>
+      <button type="button" class="quick-route" data-from="ঢাকা" data-to="ঠাকুরগাঁও">ঢাকা → ঠাকুরগাঁও</button>
+    </div>
+    <div class="bus-rule"><b>দূরপাল্লার ৮টি special route:</b> ঢাকা → চট্টগ্রাম, সিলেট, রাজশাহী, বগুড়া, গাইবান্ধা, রংপুর, দিনাজপুর ও ঠাকুরগাঁও-এ শুধু <b>Non-AC + AC</b> ভাড়া থাকবে। এই ৮টি রুটে Local/Minibus বা Coach/Gate-lock দেখানো হবে না।</div>
+    <div id="fareResults" class="results"><div class="empty">From ও To নির্বাচন করে <b>Check Fare</b> চাপুন।</div></div>
+    <div class="source"><b>⚠️ বিশেষ দ্রষ্টব্য:</b> সব ভাড়া আনুমানিক। বাস কোম্পানি, সময়, রাস্তার অবস্থা ও অন্যান্য কারণে প্রকৃত ভাড়া পরিবর্তিত হতে পারে।<br><br><span>Route data: user-provided bus vara.txt · Special AC/Non-AC fares: user-provided table.</span></div>
+  </div>
+</main>
+<footer class="footer"><div class="footer-inner"><div><strong>🇧🇩 Nagorik Hub</strong><br><small>নাগরিকের প্রয়োজনীয় তথ্য, এক জায়গায়।</small></div><small>Official source based</small></div></footer>
+<script>window.NAGORIK_DISTRICTS=[{"bn":"ঢাকা","en":"Dhaka"},{"bn":"ফরিদপুর","en":"Faridpur"},{"bn":"গাজীপুর","en":"Gazipur"},{"bn":"গোপালগঞ্জ","en":"Gopalganj"},{"bn":"কিশোরগঞ্জ","en":"Kishoreganj"},{"bn":"মাদারীপুর","en":"Madaripur"},{"bn":"মানিকগঞ্জ","en":"Manikganj"},{"bn":"মুন্সিগঞ্জ","en":"Munshiganj"},{"bn":"নারায়ণগঞ্জ","en":"Narayanganj"},{"bn":"নরসিংদী","en":"Narsingdi"},{"bn":"রাজবাড়ী","en":"Rajbari"},{"bn":"শরীয়তপুর","en":"Shariatpur"},{"bn":"টাঙ্গাইল","en":"Tangail"},{"bn":"বাগেরহাট","en":"Bagerhat"},{"bn":"চুয়াডাঙ্গা","en":"Chuadanga"},{"bn":"যশোর","en":"Jashore"},{"bn":"ঝিনাইদহ","en":"Jhenaidah"},{"bn":"খুলনা","en":"Khulna"},{"bn":"কুষ্টিয়া","en":"Kushtia"},{"bn":"মাগুরা","en":"Magura"},{"bn":"মেহেরপুর","en":"Meherpur"},{"bn":"নড়াইল","en":"Narail"},{"bn":"সাতক্ষীরা","en":"Satkhira"},{"bn":"বান্দরবান","en":"Bandarban"},{"bn":"ব্রাহ্মণবাড়িয়া","en":"Brahmanbaria"},{"bn":"চাঁদপুর","en":"Chandpur"},{"bn":"চট্টগ্রাম","en":"Chattogram"},{"bn":"কুমিল্লা","en":"Cumilla"},{"bn":"কক্সবাজার","en":"Cox's Bazar"},{"bn":"ফেনী","en":"Feni"},{"bn":"খাগড়াছড়ি","en":"Khagrachhari"},{"bn":"লক্ষ্মীপুর","en":"Lakshmipur"},{"bn":"নোয়াখালী","en":"Noakhali"},{"bn":"রাঙামাটি","en":"Rangamati"},{"bn":"বগুড়া","en":"Bogura"},{"bn":"জয়পুরহাট","en":"Joypurhat"},{"bn":"নওগাঁ","en":"Naogaon"},{"bn":"নাটোর","en":"Natore"},{"bn":"চাঁপাইনবাবগঞ্জ","en":"Chapainawabganj"},{"bn":"পাবনা","en":"Pabna"},{"bn":"রাজশাহী","en":"Rajshahi"},{"bn":"সিরাজগঞ্জ","en":"Sirajganj"},{"bn":"দিনাজপুর","en":"Dinajpur"},{"bn":"গাইবান্ধা","en":"Gaibandha"},{"bn":"কুড়িগ্রাম","en":"Kurigram"},{"bn":"লালমনিরহাট","en":"Lalmonirhat"},{"bn":"নীলফামারী","en":"Nilphamari"},{"bn":"পঞ্চগড়","en":"Panchagarh"},{"bn":"রংপুর","en":"Rangpur"},{"bn":"ঠাকুরগাঁও","en":"Thakurgaon"},{"bn":"জামালপুর","en":"Jamalpur"},{"bn":"ময়মনসিংহ","en":"Mymensingh"},{"bn":"নেত্রকোণা","en":"Netrokona"},{"bn":"শেরপুর","en":"Sherpur"},{"bn":"বরগুনা","en":"Barguna"},{"bn":"বরিশাল","en":"Barishal"},{"bn":"ভোলা","en":"Bhola"},{"bn":"ঝালকাঠি","en":"Jhalokathi"},{"bn":"পটুয়াখালী","en":"Patuakhali"},{"bn":"পিরোজপুর","en":"Pirojpur"},{"bn":"হবিগঞ্জ","en":"Habiganj"},{"bn":"মৌলভীবাজার","en":"Moulvibazar"},{"bn":"সুনামগঞ্জ","en":"Sunamganj"},{"bn":"সিলেট","en":"Sylhet"}];</script>
+<script src="js/official-data.js"></script><script src="js/live-data.js"></script><script src="js/bus-routes.js"></script><script src="js/bus-fare.js"></script><script src="js/main.js"></script>
+</body></html>
