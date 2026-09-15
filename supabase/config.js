@@ -3,3 +3,4 @@
 // The anon/publishable key is safe for browser use when RLS is configured correctly.
 window.NAGORIK_SUPABASE_URL = 'https://qycwcwlqdwmvmodbpqdf.supabase.co';
 window.NAGORIK_SUPABASE_ANON_KEY = 'sb_publishable_iTeM44sFj93YiBparUbkiw_xWzz3d6d';
+window.NAGORIK_AI_VERIFY_ENDPOINT = 'https://qycwcwlqdwmvmodbpqdf.supabase.co/functions/v1/verify-update';
