@@ -3,6 +3,7 @@
 #updateForm>label{display:block;font-weight:750;margin-top:4px;}
 #updateForm>.input,#updateForm>.select,#updateForm textarea{display:block;width:100%;min-width:0;flex:none;}
 #updateForm .dynamic-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:2px 0 4px;}
+#updateForm .dynamic-fields[hidden]{display:none!important;}
 #updateForm .dynamic-fields label{display:block;font-weight:700;align-self:end;}
 #updateForm .dynamic-fields .input{width:100%;}
 #updateForm #details{min-height:130px;resize:vertical;}
