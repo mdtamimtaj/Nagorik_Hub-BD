@@ -1,60 +1,12 @@
-// Nagorik Hub V9 — user update workflow.
-// Demo storage: localStorage. Production: connect the same payload to Supabase/another DB.
+// Nagorik Hub — local AI + Supabase user update workflow.
 (function(){
-  const KEY='nagorikHub.userUpdates.v1';
-  const form=document.getElementById('updateForm');
-  const category=document.getElementById('updateCategory');
-  const status=document.getElementById('submitStatus');
-  if(!form||!category) return;
-
-  const $=id=>document.getElementById(id);
-  const getAll=()=>{try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}};
-  const saveAll=x=>localStorage.setItem(KEY,JSON.stringify(x));
+  const form=document.getElementById('updateForm'), category=document.getElementById('updateCategory'), status=document.getElementById('submitStatus');
+  if(!form||!category)return; const $=id=>document.getElementById(id);
   const norm=s=>(s||'').toString().toLocaleLowerCase('bn-BD').replace(/[^\p{L}\p{N}]+/gu,'');
-  const today=()=>new Date().toISOString().slice(0,10);
-
-  function toggle(){
-    const v=category.value;
-    $('busFields').hidden=v!=='bus'; $('marketFields').hidden=v!=='market'; $('newInfoFields').hidden=v!=='new_info';
-    document.querySelectorAll('.dynamic-fields input').forEach(x=>x.required=false);
-    if(v==='bus'){ $('busFrom').required=true;$('busTo').required=true;$('busFare').required=true; }
-    if(v==='market'){ $('marketProduct').required=true;$('marketPrice').required=true; }
-    if(v==='new_info'){ $('infoTitle').required=true; }
-  }
-  category.addEventListener('change',toggle); toggle();
-
-  function duplicateKey(d){
-    if(d.category==='bus') return ['bus',norm(d.from),norm(d.to),norm(d.proposedValue)].join('|');
-    if(d.category==='market') return ['market',norm(d.product),norm(d.proposedValue),norm(d.location)].join('|');
-    return ['new_info',norm(d.title),norm(d.location)].join('|');
-  }
-
-  async function aiCheck(payload, reportCount){
-    const endpoint=(window.NAGORIK_AI_VERIFY_ENDPOINT||'').trim();
-    if(!endpoint) return {mode:'demo',flag:false,confidence:0,reason:'AI endpoint configured নয় — Admin review-এর জন্য pending রাখা হয়েছে।'};
-    try{
-      const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({submission:payload,reportCount})});
-      if(!r.ok) throw new Error('AI verification failed');
-      return await r.json();
-    }catch(err){return {mode:'error',flag:false,confidence:0,reason:'AI service unavailable — submission pending রাখা হয়েছে।'};}
-  }
-
-  form.addEventListener('submit',async e=>{
-    e.preventDefault();
-    const v=category.value;
-    if(!v){status.hidden=false;status.className='submit-status bad';status.textContent='Category নির্বাচন করুন।';return;}
-    const base={id:'NH-'+Date.now().toString(36).toUpperCase(),category:v,reporterName:$('reporterName').value.trim(),details:$('details').value.trim(),createdAt:new Date().toISOString(),status:'pending_ai',aiFlag:false,adminStatus:'pending'};
-    if(v==='bus') Object.assign(base,{from:$('busFrom').value.trim(),to:$('busTo').value.trim(),proposedValue:$('busFare').value.trim(),routeInfo:$('busRouteInfo').value.trim(),targetType:'bus_fare'});
-    if(v==='market') Object.assign(base,{product:$('marketProduct').value.trim(),proposedValue:$('marketPrice').value.trim(),location:$('marketLocation').value.trim(),reportedDate:$('marketDate').value||today(),targetType:'market_price'});
-    if(v==='new_info') Object.assign(base,{title:$('infoTitle').value.trim(),location:$('infoLocation').value.trim(),targetType:'new_info'});
-
-    const all=getAll(); const key=duplicateKey(base); const reportCount=all.filter(x=>duplicateKey(x)===key).length+1;
-    status.hidden=false;status.className='submit-status pending';status.innerHTML='🤖 AI verification চলছে… online source + আগের user reports check করা হচ্ছে।';
-    const ai=await aiCheck(base,reportCount);
-    base.reportCount=reportCount;base.aiFlag=ai.flag===true;base.aiConfidence=Number(ai.confidence||0);base.aiReason=ai.reason||'';base.aiSources=ai.sources||[];base.status=base.aiFlag?'ai_green':'pending_admin';
-    all.push(base);saveAll(all);
-    status.className=base.aiFlag?'submit-status good':'submit-status pending';
-    status.innerHTML=base.aiFlag?`🟢 <b>AI Green Flag</b> — ${reportCount}টি matching report পাওয়া গেছে। Confidence: ${base.aiConfidence}%. এখন Admin final verification করবে।`:`🟡 <b>Pending Review</b> — ${reportCount}টি matching report পাওয়া গেছে। ${base.aiReason}`;
-    form.reset();toggle();
-  });
+  const today=()=>new Date().toISOString().slice(0,10); let enginePromise=null;
+  function toggle(){const v=category.value;if($('busFields'))$('busFields').hidden=v!=='bus';if($('marketFields'))$('marketFields').hidden=v!=='market';if($('newInfoFields'))$('newInfoFields').hidden=v!=='new_info';document.querySelectorAll('.dynamic-fields input').forEach(x=>x.required=false);if(v==='bus'){$('busFrom').required=true;$('busTo').required=true;$('busFare').required=true;}if(v==='market'){$('marketProduct').required=true;$('marketPrice').required=true;}if(v==='new_info')$('infoTitle').required=true;}
+  category.addEventListener('change',toggle);toggle();
+  async function db(){if(window.supabaseClient)return window.supabaseClient;if(!window.supabase||!window.NAGORIK_SUPABASE_URL||!window.NAGORIK_SUPABASE_ANON_KEY)return null;window.supabaseClient=window.supabase.createClient(window.NAGORIK_SUPABASE_URL,window.NAGORIK_SUPABASE_ANON_KEY);return window.supabaseClient;}
+  async function localAI(p,count){if(!navigator.gpu)return{mode:'no-webgpu',flag:false,confidence:0,reason:'WebGPU নেই; নিরাপদভাবে Admin review-তে পাঠানো হয়েছে।',sources:[]};try{if(!enginePromise){const{CreateMLCEngine}=await import('https://esm.run/@mlc-ai/web-llm');enginePromise=CreateMLCEngine('Llama-3.2-1B-Instruct-q4f32_1-MLC',{initProgressCallback:x=>{if(status&&x?.text)status.textContent='🤖 Local AI: '+x.text;}});}const e=await enginePromise,r=await e.chat.completions.create({messages:[{role:'system',content:'Return valid JSON only.'},{role:'user',content:`Assess this Bangladesh citizen report conservatively. Green means only internally plausible, never officially verified. Return {"flag":true|false,"confidence":0-100,"reason":"short Bengali reason"}. Report count ${count}. Data: ${JSON.stringify(p)}`}],temperature:.1,max_tokens:160});const m=(r?.choices?.[0]?.message?.content||'').match(/\{[\s\S]*\}/);if(!m)throw Error();const x=JSON.parse(m[0]);return{mode:'webllm-local',flag:x.flag===true,confidence:Math.max(0,Math.min(100,Number(x.confidence)||0)),reason:String(x.reason||''),sources:[]};}catch(e){return{mode:'local-ai-error',flag:false,confidence:0,reason:'Local AI চালু করা যায়নি; Admin review-তে পাঠানো হয়েছে।',sources:[]};}}
+  form.addEventListener('submit',async e=>{e.preventDefault();const v=category.value;if(!v){status.hidden=false;status.textContent='Category নির্বাচন করুন।';return;}const p={id:'NH-'+Date.now().toString(36).toUpperCase(),category:v,reporterName:$('reporterName')?.value.trim()||'',details:$('details')?.value.trim()||'',createdAt:new Date().toISOString(),status:'pending_ai',aiFlag:false,adminStatus:'pending'};if(v==='bus')Object.assign(p,{from:$('busFrom').value.trim(),to:$('busTo').value.trim(),proposedValue:$('busFare').value.trim(),routeInfo:$('busRouteInfo')?.value.trim()||'',targetType:'bus_fare'});if(v==='market')Object.assign(p,{product:$('marketProduct').value.trim(),proposedValue:$('marketPrice').value.trim(),location:$('marketLocation')?.value.trim()||'',reportedDate:$('marketDate')?.value||today(),targetType:'market_price'});if(v==='new_info')Object.assign(p,{title:$('infoTitle').value.trim(),location:$('infoLocation')?.value.trim()||'',targetType:'new_info'});status.hidden=false;status.innerHTML='🤖 Local AI verification চলছে…';const d=await db();if(!d){status.textContent='Database connection পাওয়া যায়নি।';return;}const{data:old}=await d.from('user_updates').select('*').eq('category',v).limit(500);const key=v==='bus'?['bus',norm(p.from),norm(p.to),norm(p.proposedValue)].join('|'):v==='market'?['market',norm(p.product),norm(p.proposedValue),norm(p.location)].join('|'):['new_info',norm(p.title),norm(p.location)].join('|');const count=(old||[]).filter(x=>{const k=x.category==='bus'?['bus',norm(x.from),norm(x.to),norm(x.proposed_value)].join('|'):x.category==='market'?['market',norm(x.product),norm(x.proposed_value),norm(x.location)].join('|'):['new_info',norm(x.title),norm(x.location)].join('|');return k===key;}).length+1;const ai=await localAI(p,count);p.reportCount=count;p.aiFlag=ai.flag;p.aiConfidence=ai.confidence;p.aiReason=ai.reason;p.aiSources=ai.sources;p.status=ai.flag?'ai_green':'pending_admin';const row={id:p.id,category:p.category,reporter_name:p.reporterName,details:p.details,created_at:p.createdAt,status:p.status,ai_flag:p.aiFlag,ai_confidence:p.aiConfidence,ai_reason:p.aiReason,ai_sources:p.aiSources,report_count:p.reportCount,admin_status:'pending',from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null};const{error}=await d.from('user_updates').insert(row);if(error){status.textContent='Save হয়নি: '+error.message;return;}status.innerHTML=p.aiFlag?`🟢 Local AI Green Flag — ${p.aiConfidence}%<br>Admin final verification করবে।`:`🟡 Pending Admin Review<br>${p.aiReason}`;form.reset();toggle();});
 })();
