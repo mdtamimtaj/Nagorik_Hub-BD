@@ -10,11 +10,19 @@
   const normRoute=api.normalizeRoute||((a,b)=>normLocation(a)+'->'+normLocation(b));
   const today=()=>new Date().toISOString().slice(0,10);
 
+  function setVisible(el, visible){
+    if(!el)return;
+    el.hidden=!visible;
+    // Inline display makes this independent of any grid/flex CSS rules.
+    el.style.display=visible?'grid':'none';
+    el.setAttribute('aria-hidden',visible?'false':'true');
+  }
+
   function toggle(){
     const v=category.value;
-    if($('busFields'))$('busFields').hidden=v!=='bus';
-    if($('marketFields'))$('marketFields').hidden=v!=='market';
-    if($('newInfoFields'))$('newInfoFields').hidden=v!=='new_info';
+    setVisible($('busFields'),v==='bus');
+    setVisible($('marketFields'),v==='market');
+    setVisible($('newInfoFields'),v==='new_info');
     document.querySelectorAll('.dynamic-fields input').forEach(x=>x.required=false);
     if(v==='bus'){ $('busFrom').required=true; $('busTo').required=true; $('busFare').required=true; }
     if(v==='market'){ $('marketProduct').required=true; $('marketPrice').required=true; }
@@ -83,16 +91,10 @@
     const reportCount=1+(v==='bus'?rows.filter(x=>normRoute(x.from??x.payload?.from??'',x.to??x.payload?.to??'')===p.routeKey).length:0);
 
     const row={
-      category:v,
-      target_key:p.routeKey||p.normalizedProduct||p.normalizedTitle||null,
-      payload:{
-        reporter_name:p.reporterName,details:p.details,from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,
-        product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null,
-        normalized_from:p.normalizedFrom||null,normalized_to:p.normalizedTo||null,route_key:p.routeKey||null,normalized_location:p.normalizedLocation||null,normalized_product:p.normalizedProduct||null,normalized_title:p.normalizedTitle||null
-      },
+      category:v,target_key:p.routeKey||p.normalizedProduct||p.normalizedTitle||null,
+      payload:{reporter_name:p.reporterName,details:p.details,from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null,normalized_from:p.normalizedFrom||null,normalized_to:p.normalizedTo||null,route_key:p.routeKey||null,normalized_location:p.normalizedLocation||null,normalized_product:p.normalizedProduct||null,normalized_title:p.normalizedTitle||null},
       report_count:reportCount,ai_flag:ai.flag,ai_confidence:ai.confidence,ai_reason:ai.reason,ai_sources:[],status:ai.flag?'ai_green':'pending_admin',admin_status:'pending',
-      reporter_name:p.reporterName||null,details:p.details||null,from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,
-      product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null
+      reporter_name:p.reporterName||null,details:p.details||null,from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null
     };
     const {data:saved,error}=await d.from('user_updates').insert(row).select('id').single();
     if(error){status.textContent='Save হয়নি: '+error.message;return;}
