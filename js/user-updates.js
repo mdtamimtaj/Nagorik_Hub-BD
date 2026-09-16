@@ -1,5 +1,5 @@
 // Nagorik Hub — user update workflow
-// Uses the current public.user_updates schema and location normalization.
+// Fast free browser-side check + direct Supabase fields for Admin review.
 (function(){
   const form=document.getElementById('updateForm'), category=document.getElementById('updateCategory'), status=document.getElementById('submitStatus');
   if(!form||!category)return;
@@ -29,23 +29,25 @@
     return window.supabaseClient;
   }
 
-  // Fast, free browser-side plausibility check. No model download or paid API.
   function localCheck(p, rows){
     let duplicate=false, conflict=false;
     if(p.category==='bus'){
       rows.forEach(x=>{
-        if(normRoute(x.from||'',x.to||'')===p.routeKey){
-          if(cleanText(x.proposed_value||'')===cleanText(p.proposedValue||'')) duplicate=true;
-          else if(x.proposed_value!==null && x.proposed_value!==undefined && String(x.proposed_value)!=='') conflict=true;
+        const xf=x.from??x.payload?.from??''; const xt=x.to??x.payload?.to??''; const xv=x.proposed_value??x.payload?.proposed_value??'';
+        if(normRoute(xf,xt)===p.routeKey){
+          if(cleanText(xv)===cleanText(p.proposedValue)) duplicate=true;
+          else if(String(xv)!=='') conflict=true;
         }
       });
     } else if(p.category==='market'){
       rows.forEach(x=>{
-        if(cleanText(x.product||'')===p.normalizedProduct && normLocation(x.location||'')===p.normalizedLocation && cleanText(x.proposed_value||'')===cleanText(p.proposedValue||'')) duplicate=true;
+        const xp=x.product??x.payload?.product??'', xl=x.location??x.payload?.location??'', xv=x.proposed_value??x.payload?.proposed_value??'';
+        if(cleanText(xp)===p.normalizedProduct && normLocation(xl)===p.normalizedLocation && cleanText(xv)===cleanText(p.proposedValue)) duplicate=true;
       });
     } else {
       rows.forEach(x=>{
-        if(cleanText(x.title||'')===p.normalizedTitle && normLocation(x.location||'')===p.normalizedLocation) duplicate=true;
+        const xt=x.title??x.payload?.title??'', xl=x.location??x.payload?.location??'';
+        if(cleanText(xt)===p.normalizedTitle && normLocation(xl)===p.normalizedLocation) duplicate=true;
       });
     }
     if(conflict)return {flag:false,confidence:100,reason:'⚠️ একই normalized route-এ ভিন্ন ভাড়া পাওয়া গেছে। Admin verification প্রয়োজন।'};
@@ -78,19 +80,20 @@
     if(readError){status.textContent='Database read হয়নি: '+readError.message;return;}
     const rows=old||[];
     const ai=localCheck(p,rows);
-    const reportCount=1+(v==='bus'?rows.filter(x=>normRoute(x.from||'',x.to||'')===p.routeKey).length:0);
+    const reportCount=1+(v==='bus'?rows.filter(x=>normRoute(x.from??x.payload?.from??'',x.to??x.payload?.to??'')===p.routeKey).length:0);
 
-    // Current Supabase table uses UUID id and stores arbitrary normalized metadata in payload.
-    // Do not send a custom string id or unsupported columns.
-    const payload={
-      reporter_name:p.reporterName, details:p.details,
-      from:p.from||null, to:p.to||null, proposed_value:p.proposedValue||null, route_info:p.routeInfo||null,
-      product:p.product||null, location:p.location||null, reported_date:p.reportedDate||null,
-      title:p.title||null, target_type:p.targetType||null,
-      normalized_from:p.normalizedFrom||null, normalized_to:p.normalizedTo||null, route_key:p.routeKey||null,
-      normalized_location:p.normalizedLocation||null, normalized_product:p.normalizedProduct||null, normalized_title:p.normalizedTitle||null
+    const row={
+      category:v,
+      target_key:p.routeKey||p.normalizedProduct||p.normalizedTitle||null,
+      payload:{
+        reporter_name:p.reporterName,details:p.details,from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,
+        product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null,
+        normalized_from:p.normalizedFrom||null,normalized_to:p.normalizedTo||null,route_key:p.routeKey||null,normalized_location:p.normalizedLocation||null,normalized_product:p.normalizedProduct||null,normalized_title:p.normalizedTitle||null
+      },
+      report_count:reportCount,ai_flag:ai.flag,ai_confidence:ai.confidence,ai_reason:ai.reason,ai_sources:[],status:ai.flag?'ai_green':'pending_admin',admin_status:'pending',
+      reporter_name:p.reporterName||null,details:p.details||null,from:p.from||null,to:p.to||null,proposed_value:p.proposedValue||null,route_info:p.routeInfo||null,
+      product:p.product||null,location:p.location||null,reported_date:p.reportedDate||null,title:p.title||null,target_type:p.targetType||null
     };
-    const row={category:v,target_key:p.routeKey||p.normalizedProduct||p.normalizedTitle||null,payload,report_count:reportCount,ai_flag:ai.flag,ai_confidence:ai.confidence,ai_reason:ai.reason,ai_sources:[],status:ai.flag?'ai_green':'pending_admin',admin_status:'pending'};
     const {data:saved,error}=await d.from('user_updates').insert(row).select('id').single();
     if(error){status.textContent='Save হয়নি: '+error.message;return;}
     status.innerHTML=ai.flag?`🟢 Local Check সম্পন্ন — ${ai.confidence}%<br>Report ID: ${saved?.id||'saved'}<br>Admin final verification করবে।`:`🟡 Pending Admin Review<br>${ai.reason}<br>Report ID: ${saved?.id||'saved'}`;
