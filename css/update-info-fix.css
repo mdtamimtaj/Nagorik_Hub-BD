@@ -1,0 +1,11 @@
+/* Nagorik Hub — update form layout fix */
+#updateForm{display:grid;gap:12px;width:100%;}
+#updateForm>label{display:block;font-weight:750;margin-top:4px;}
+#updateForm>.input,#updateForm>.select,#updateForm textarea{display:block;width:100%;min-width:0;flex:none;}
+#updateForm .dynamic-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px;margin:2px 0 4px;}
+#updateForm .dynamic-fields label{display:block;font-weight:700;align-self:end;}
+#updateForm .dynamic-fields .input{width:100%;}
+#updateForm #details{min-height:130px;resize:vertical;}
+#submitStatus{margin:2px 0 0!important;padding:12px 14px;border-radius:10px;line-height:1.5;min-height:0;}
+#updateForm .btn{justify-self:start;}
+@media(max-width:650px){#updateForm .dynamic-fields{grid-template-columns:1fr;}#updateForm .btn{width:100%;}}
